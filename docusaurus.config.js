@@ -25,7 +25,7 @@ const config = {
   url: 'https://WoskySot.github.io', // Your website URL
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/rossiadaa_docusaurus_3/',
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -52,9 +52,9 @@ const config = {
           sidebarPath: './sidebars.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          // 弹出窗口式脚注：构建期把文末脚注内容复制到正文引用旁，
+          // editUrl:
+          //   'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          // // 弹出窗口式脚注：构建期把文末脚注内容复制到正文引用旁，
           // 显隐由 src/css/custom.css 的 .fnRef/.fnPop 控制（无客户端 JS）。
           // 想让公告栏（blog）也用上，把同一个插件加到 blog.rehypePlugins 即可。
           //
