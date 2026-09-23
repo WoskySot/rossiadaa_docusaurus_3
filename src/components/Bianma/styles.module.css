@@ -1,0 +1,217 @@
+/**
+ * 边码样式
+ * ===========================================================================
+ * 版式：正文容器外侧留出一条固定宽度的"版心外白边"（gutter），页码用绝对定位
+ * 画进这条白边里；相邻页码之间拉一条 1px 细线，表示"这段行文属于哪一页"。
+ *
+ * 布局三件套都在一个变量上：--bianma-gutter（白边宽度）。
+ * 它由组件以内联自定义属性下发（见 index.js 的 style），因此**媒体查询里不能
+ * 直接改写这个变量**（内联样式优先级更高），窄屏适配只能在使用点用
+ * min(var(--bianma-gutter), …) 收窄——这一点在下面的移动端段落里保持一致。
+ *
+ * 配色一律取 Infima 变量（--ifm-color-emphasis-*），明暗两套自动跟随；
+ * 暗色覆盖按项目约定用 [data-theme='dark'] 作用域。
+ */
+
+.bianma {
+  --bianma-gutter: 56px;
+  /* 细线与正文之间留的呼吸空隙，避免线贴着字 */
+  --bianma-gap: 6px;
+  /* 页码与细线之间的距离 */
+  --bianma-mark-gap: 9px;
+  /* 页码指向细线的那一小截横线 */
+  --bianma-tick: 6px;
+
+  /*
+   * 页码是这一整套东西的"正文"，12px 属于 WCAG 的"正常字号"，AA 要求 4.5:1。
+   * 实测（白底）：
+   *   emphasis-500 #bec3c9 → 1.8:1  ✗ 太淡
+   *   emphasis-600 #8d949e → 3.1:1  ✗ 仍不够
+   *   emphasis-700 #606770 → 5.7:1  ✓ 比正文（#1c1e21 ≈ 15.7:1）明显轻，且够读
+   */
+  --bianma-mark-color: var(--ifm-color-emphasis-700);
+  /*
+   * 细线承载"这一段行文属于哪一页"的信息，不能淡到看不见——实测：
+   *   emphasis-200 #ebedf0 → 1.1:1  在白底上几乎与纸同色，截图里基本看不出来 ✗
+   *   emphasis-300 #bec3c9 → 1.8:1  能看见，又明显轻于页码 ✓
+   * （暗色那套用同一档，视觉重量刚好对称。）
+   */
+  --bianma-rule-color: var(--ifm-color-emphasis-300);
+
+  position: relative;
+}
+
+[data-theme='dark'] .bianma {
+  /* 暗色底 #1b1b1d 上：emphasis-400 #8d949e → 5.6:1 ✓ */
+  --bianma-mark-color: var(--ifm-color-emphasis-400);
+  --bianma-rule-color: var(--ifm-color-emphasis-300);
+}
+
+/* 正文：让出版心外白边（白边宽度 + 与细线之间的空隙） */
+.content {
+  padding-inline-start: calc(var(--bianma-gutter) + var(--bianma-gap));
+}
+
+.sideRight .content {
+  padding-inline-start: 0;
+  padding-inline-end: calc(var(--bianma-gutter) + var(--bianma-gap));
+}
+
+/*
+ * 语法 ^^文本^^ 留下的锚点（见 plugins/bianma-mark）：
+ * 它在正文里必须**完全不占位**——零宽、零高、不可见，只作为测量落点的定位点。
+ * letter-spacing / word-spacing 显式清零是必要的：它们会被继承，
+ * 若祖先元素设了字距，光靠 font-size: 0 仍会留下几像素宽度，把折行挤偏。
+ * user-select: none 则避免复制正文时把页码一起带走（页码只在白边里有意义）。
+ *
+ * 若这份样式没加载，锚点会退回成正文里的小字页码——刻意的降级（见组件头注释）。
+ */
+.content :global(.bianmaAnchor) {
+  font-size: 0;
+  line-height: 0;
+  letter-spacing: 0;
+  word-spacing: 0;
+  padding: 0;
+  border: 0;
+  user-select: none;
+}
+
+/* 白边：只负责定位，本身不画东西（细线是逐段画的，不是一条通到底） */
+.gutter {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--bianma-gutter);
+  pointer-events: none;
+}
+
+.sideRight .gutter {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+
+/* 单个页码：贴白边内侧（靠近正文那一侧），与所在行垂直居中 */
+.mark {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  transform: translateY(-50%);
+  padding-inline-end: var(--bianma-mark-gap);
+  text-align: end;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--bianma-mark-color);
+}
+
+.sideRight .mark {
+  padding-inline-end: 0;
+  padding-inline-start: var(--bianma-mark-gap);
+  text-align: start;
+}
+
+/* 页码指向细线的小横线，让"哪个数字管哪条线"一目了然 */
+.mark::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 0;
+  inline-size: var(--bianma-tick);
+  block-size: 1px;
+  background-color: var(--bianma-rule-color);
+}
+
+.sideRight .mark::after {
+  inset-inline-end: auto;
+  inset-inline-start: 0;
+}
+
+/* 关掉连线时，那一小截指向细线的横勾也就没有意义了，一并收起 */
+.bianma[data-bianma-rule='off'] .mark::after {
+  display: none;
+}
+
+/*
+ * 同一行里挤下两个页码时，后一个会被下推让开（见 index.js 的 MIN_MARK_GAP），
+ * 属性标记由组件下发；这里把小勾改成虚线，提示"这个数字不在本行上"。
+ */
+.mark[data-bianma-pushed]::after {
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--bianma-rule-color) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* 页码之间的细线：从本页页码画到下一页页码（最后一段画到版心底部） */
+.rule {
+  position: absolute;
+  inset-inline-end: 0;
+  inline-size: 1px;
+  background-color: var(--bianma-rule-color);
+}
+
+.sideRight .rule {
+  inset-inline-end: auto;
+  inset-inline-start: 0;
+}
+
+/*
+ * 窄屏（Docusaurus 的移动端断点）：
+ * 不隐藏功能，只把白边收窄到最多 44px、字号同步缩小。
+ * 44px 是"三位页码 + 间距"还能读的下限；移动端折行更密，页码本身反而更密集，
+ * 所以这里不减间距、只减字号。
+ */
+@media (max-width: 996px) {
+  .bianma {
+    --bianma-gap: 4px;
+    --bianma-tick: 4px;
+  }
+
+  .content {
+    padding-inline-start: calc(min(var(--bianma-gutter), 44px) + var(--bianma-gap));
+  }
+
+  .sideRight .content {
+    padding-inline-start: 0;
+    padding-inline-end: calc(min(var(--bianma-gutter), 44px) + var(--bianma-gap));
+  }
+
+  .gutter {
+    inline-size: min(var(--bianma-gutter), 44px);
+  }
+
+  .mark {
+    padding-inline-end: 5px;
+    font-size: 0.7rem;
+  }
+
+  .sideRight .mark {
+    padding-inline-end: 0;
+    padding-inline-start: 5px;
+  }
+}
+
+/* 边码本来就是印在纸上的东西，打印时保留；颜色改成不依赖主题的灰 */
+@media print {
+  .content {
+    padding-inline-start: calc(var(--bianma-gutter) + var(--bianma-gap));
+  }
+
+  .sideRight .content {
+    padding-inline-start: 0;
+    padding-inline-end: calc(var(--bianma-gutter) + var(--bianma-gap));
+  }
+
+  .gutter {
+    inline-size: var(--bianma-gutter);
+  }
+
+  .bianma {
+    --bianma-mark-color: #444444;
+    --bianma-rule-color: #bbbbbb;
+  }
+}

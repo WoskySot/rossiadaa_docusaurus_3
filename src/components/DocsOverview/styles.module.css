@@ -1,0 +1,143 @@
+/* 「施工中 / 已完成」双栏总览
+ * 桌面端（>996px）左右并排，移动端（≤996px）自动堆叠为上下两段。
+ * 两栏靠「顶部色条 + 圆点 + 计数」三重标记区分，不依赖位置记忆。
+ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+  align-items: start;
+}
+
+.column {
+  --ov-accent: var(--ifm-color-primary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-top: 3px solid var(--ov-accent);
+  border-radius: var(--ifm-global-radius, 0.4rem);
+  background: var(--ifm-background-surface-color);
+}
+
+/* 已完成：沿用站点品牌色，表示"落定" */
+.done {
+  --ov-accent: var(--ifm-color-primary);
+}
+
+/* 施工中：琥珀色，表示"未定型" */
+.wip {
+  --ov-accent: #a9741f;
+}
+
+[data-theme='dark'] .wip {
+  --ov-accent: #e0b264;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  background: var(--ifm-color-emphasis-100);
+}
+
+.dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ov-accent);
+}
+
+.label {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  color: var(--ifm-heading-color);
+}
+
+.count {
+  flex: none;
+  margin-left: auto;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--ov-accent);
+  background: var(--ifm-color-emphasis-200);
+}
+
+.blurb {
+  margin: 0;
+  padding: 0.85rem 1.1rem 0;
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.75rem 0.6rem 0.9rem;
+  list-style: none;
+}
+
+.item {
+  margin: 0;
+}
+
+.link {
+  display: block;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--ifm-global-radius, 0.4rem);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.link:hover {
+  border-color: var(--ifm-color-emphasis-300);
+  background: var(--ifm-color-emphasis-100);
+  color: inherit;
+  text-decoration: none;
+}
+
+.itemTitle {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ifm-link-color);
+}
+
+.link:hover .itemTitle {
+  color: var(--ifm-link-hover-color);
+}
+
+.itemDesc {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.empty {
+  margin: 0;
+  padding: 0.75rem 1.1rem 1.25rem;
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+/* 移动端：两栏改为上下堆叠，顺序先「施工中」后「已完成」 */
+@media screen and (max-width: 996px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+}

@@ -1,0 +1,427 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #320009;
+  --ifm-color-primary-dark: #2d0008;
+  --ifm-color-primary-darker: #2b0008;
+  --ifm-color-primary-darkest: #230006;
+  --ifm-color-primary-light: #37000a;
+  --ifm-color-primary-lighter: #3a000a;
+  --ifm-color-primary-lightest: #41000c;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #ffd1b3;
+  --ifm-color-primary-dark: #ffb788;
+  --ifm-color-primary-darker: #ffaa72;
+  --ifm-color-primary-darkest: #ff8231;
+  --ifm-color-primary-light: #ffebde;
+  --ifm-color-primary-lighter: #fff8f4;
+  --ifm-color-primary-lightest: #ffffff;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+ * 页脚 Footer
+ * --------------------------------------------------------------------------
+ * 做法参考 Docusaurus 官方文档 “Styling and Layout”：
+ *   1. 只改写 Infima 的 --ifm-footer-* 变量，不硬编码 .footer__xx 的样式
+ *      （文档：Styling your site with Infima —— 优先通过 CSS 变量覆盖）
+ *   2. 暗色模式用 [data-theme='dark'] 作用域，因为 <html> 在暗色下带该属性
+ *      （文档：Dark Mode）
+ *   3. 选择器选用稳定的主题类名 theme-layout-footer（ThemeClassNames 提供）
+ *      并叠加 .footer，使优先级 (0,2,0) 高于 Infima 自带的 .footer--dark (0,1,0)，
+ *      这样无论样式表加载顺序如何都能生效（文档：Theme Class Names）
+ *
+ * 配色思路：直接取自现有主色 --ifm-color-primary
+ *   - 亮色模式主色 #320009 是一块极深的酒红（帝俄宫墙红），
+ *     与首页 hero--primary 同色，于是首屏 hero 与页脚形成“书挡式”呼应；
+ *   - 暗色模式主色 #ffd1b3 是暖杏色，正好作为深色页脚上的文字/强调色。
+ * 对比度（WCAG）：标题与链接 ≈13:1、版权文字 ≈8:1，均达 AA/AAA。
+ *
+ * ⚠️ 关键坑：Infima 默认 --ifm-footer-link-hover-color 就是 --ifm-color-primary。
+ *    一旦把页脚背景改成主色，悬停态会变成“同色文字压在背景上”而消失，
+ *    因此下面显式改写了 hover 颜色。
+ * ========================================================================== */
+
+.theme-layout-footer.footer {
+  /* 亮色模式：与主色 --ifm-color-primary 同值的深酒红 */
+  --ifm-footer-background-color: #320009;
+  --ifm-footer-title-color: #ffd1b3; /* 暗色模式主色，暖杏色，作栏目标题 */
+  --ifm-footer-link-color: #f2e0d8; /* 暖调近白，作正文链接 */
+  --ifm-footer-link-hover-color: #ffd1b3; /* 悬停转为暖杏色，与近白明显区分 */
+  --ifm-footer-color: #c2a49b; /* 版权文字，压暗一档以形成层次 */
+  /* 顶部一条暖色细线，呼应 hero 与主色 */
+  border-top: 1px solid rgba(255, 209, 179, 0.28);
+}
+
+/* 暗色模式：同一块酒红再压暗一档，做成“凹陷底座”，细线也随之收敛 */
+[data-theme='dark'] .theme-layout-footer.footer {
+  --ifm-footer-background-color: #2a060e;
+  --ifm-footer-title-color: #ffd1b3;
+  --ifm-footer-link-color: #f2e0d8;
+  --ifm-footer-link-hover-color: #ffd1b3;
+  --ifm-footer-color: #c2a49b;
+  border-top-color: rgba(255, 209, 179, 0.18);
+}
+
+/* ==========================================================================
+ * 弹出窗口式脚注（EPUB 风格）
+ * --------------------------------------------------------------------------
+ * 标记由构建期的 rehype 插件 plugins/footnote-popover/index.js 生成：
+ *   <span class="fnRef"><sup><a …>1</a></sup><span class="fnPop" role="note">…</span></span>
+ * 内容是从文末脚注区**复制**来的，底部脚注区依然是权威副本。
+ * 因此这里只负责"弹窗长什么样、什么时候显示、显示在哪儿"，不负责内容本身。
+ *
+ * "显示在哪儿"两个平台共用同一套实测算法（src/clientModules/footnotePopoverFit.js）：
+ *   上方优先 → 上方放不下翻到下方 → 水平越界整体平移 → 仍装不下则限高 + 内部滚动。
+ * 算法只往元素上写两个 CSS 变量（--fn-pop-max / --fn-pop-shift）和两个状态属性
+ * （data-fn-flip / data-fn-scroll），几何本身全留在本节里 —— 所以本节的定位规则是
+ * **平台无关**的，谁调用算法都一样。
+ *
+ * 本节有三条硬规矩，都是踩过坑换来的：
+ *   1. 弹窗的**几何与外观**写在基础层（不设任何媒体查询），只有"什么时候显示"才分设备写。
+ *      因为触屏也要弹窗（JS 挂 [data-fn-open]），几何若只写在指针查询里，
+ *      触屏打开弹窗时就完全没有定位信息，会退化成占满整行的静态块。
+ *   2. "藏起来"必须写在媒体查询**之外**。`display: none` 是兜底层：把隐藏和交互能力
+ *      塞进同一个 @media，会让"查询不匹配"从"功能不可用"升级成"页面渲染错乱"——
+ *      副本退化成普通 inline span，注解原文被直接铺进正文，每段后面多出一行乱码。
+ *      ⚠️ 这个缺陷在桌面端把窗口调窄是复现不了的：hover/pointer 绑定的是**输入设备**，
+ *      与视口宽度无关，只有真机或触摸模拟才看得见。
+ *   3. 键盘可达：指针设备上 :focus-within 让 Tab 聚焦到脚注编号时同样弹出。
+ *      层级压在吸顶导航栏之下：--ifm-z-index-dropdown (100) < --ifm-z-index-fixed (200)，
+ *      否则弹窗会盖住导航栏，看上去像坏了。
+ *
+ * 配色沿用主题变量，所以明暗两种模式自动适配，无需分别写规则。
+ * ========================================================================== */
+
+/* --------------------------------------------------------------------------
+ * 基础层：几何 + 外观 + 默认隐藏（触屏与指针设备共用一套）
+ * -------------------------------------------------------------------------- */
+.fnRef {
+  position: relative;
+  display: inline-block;
+  /* 下面两个变量由 src/clientModules/footnotePopoverFit.js 在弹窗显示/调整时按视口实测写入。
+     两个平台共用同一套算法：触屏走 footnoteTouchPopover.js（点开式），
+     指针设备走 footnotePopoverHover.js（悬停/聚焦式）：
+       --fn-pop-shift  水平平移量：居中位置越出视口时把弹窗推回来，小三角跟着走
+       --fn-pop-max    高度上限：等于编号那一侧真正剩下的空间，超出部分由弹窗内部滚动 */
+  --fn-pop-shift: 0px;
+}
+
+.fnPop {
+  /* ❗ 这一行必须在媒体查询之外，见本节头注释第 2 条 */
+  display: none;
+
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.45rem);
+  z-index: var(--ifm-z-index-dropdown);
+  box-sizing: border-box;
+  width: max-content;
+  /* 长注解自动换行，但不会溢出版心 */
+  max-width: min(28rem, 84vw);
+  /* 高度上限由 JS 实测写入（两侧都放不下时就是"编号那一侧剩下的空间"）；
+     没等到 JS 时留空 → 不设上限，绝不因此把内容藏起来 */
+  max-height: var(--fn-pop-max, none);
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+  background-color: var(--ifm-background-surface-color);
+  box-shadow: var(--ifm-global-shadow-md);
+  color: var(--ifm-font-color-base);
+  font-size: 0.85rem;
+  font-weight: var(--ifm-font-weight-normal);
+  line-height: 1.55;
+  text-align: left;
+  /* 抹掉 <sup> 继承下来的上标偏移，弹窗里一律正常基线 */
+  vertical-align: baseline;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(calc(-50% + var(--fn-pop-shift))) translateY(0.25rem);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s;
+}
+
+/* 指向被注解编号的小三角：旋转 45° 的方块，压掉弹窗下边框的一半。
+   left 用 clamp 夹住：贴边平移（--fn-pop-shift）后三角会跟着走，但不许走出弹窗的圆角。 */
+.fnPop::after {
+  content: '';
+  position: absolute;
+  top: calc(100% - 5px);
+  left: clamp(0.7rem, calc(50% - var(--fn-pop-shift)), calc(100% - 0.7rem));
+  width: 10px;
+  height: 10px;
+  border-right: 1px solid var(--ifm-color-emphasis-300);
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  background-color: var(--ifm-background-surface-color);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* ------------------------------------------------------------------
+ * 副本里的块级标签都被插件改写成了 <span> + 类名（原因见插件文件头注释），
+ * 所以这里负责把它们重新摆成块级版式。
+ * 之所以非要这么绕：弹窗挂在正文 <p> 内部，而 HTML 解析器遇到 <p>/<ul>/<pre>
+ * 这类块级起始标签会自动闭合外层 <p>，导致注解内容被甩出弹窗、变成可见乱码。
+ * ------------------------------------------------------------------ */
+.fnPopBlock {
+  display: block;
+  margin: 0;
+}
+
+/* 块与块之间留一点间距；列表项/单元格之间留小一点 */
+.fnPopBlock + .fnPopBlock {
+  margin-top: 0.55em;
+}
+
+.fnPopLi + .fnPopLi,
+.fnPopDt + .fnPopDt,
+.fnPopTd + .fnPopTd {
+  margin-top: 0.2em;
+}
+
+/* 列表项已经不再是 <li>，标记要靠 CSS 自己画 */
+.fnPopUl,
+.fnPopOl {
+  padding-left: 1.35em;
+}
+
+.fnPopUl > .fnPopLi {
+  position: relative;
+}
+
+.fnPopUl > .fnPopLi::before {
+  content: '•';
+  position: absolute;
+  left: -1em;
+}
+
+.fnPopOl {
+  counter-reset: fnPopOl;
+}
+
+.fnPopOl > .fnPopLi {
+  position: relative;
+  counter-increment: fnPopOl;
+}
+
+.fnPopOl > .fnPopLi::before {
+  content: counter(fnPopOl) '.';
+  position: absolute;
+  left: -1.5em;
+  width: 1.25em;
+  text-align: right;
+}
+
+/* 表格：用 display 还原（注解里很少见，聊备一格） */
+.fnPopTable {
+  display: table;
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+.fnPopTbody {
+  display: table-row-group;
+}
+
+.fnPopTr {
+  display: table-row;
+}
+
+.fnPopTd {
+  display: table-cell;
+  padding: 0.15em 0.6em;
+  border: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.fnPopQuote {
+  padding-left: 0.75em;
+  border-left: 3px solid var(--ifm-color-emphasis-300);
+}
+
+.fnPopPre {
+  padding: 0.4em 0.65em;
+  overflow-x: auto;
+  border-radius: var(--ifm-global-radius);
+  background-color: var(--ifm-code-background);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.9em;
+  white-space: pre-wrap;
+}
+
+.fnPopPre > code {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: inherit;
+}
+
+.fnPopH {
+  font-size: 1em;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.fnPopHr {
+  border-top: 1px solid var(--ifm-color-emphasis-300);
+}
+
+/* 首尾不要多余留白 */
+.fnPop > :first-child {
+  margin-top: 0;
+}
+
+.fnPop > :last-child {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+ * 触屏开启态（只有触屏会挂 [data-fn-open]，指针设备靠 :hover / :focus-within 显示）
+ * --------------------------------------------------------------------------
+ * 触屏没有悬停态，所以改成"第一下点编号就地弹窗、再点一下才跳转"，
+ * 开关由 src/clientModules/footnoteTouchPopover.js 在 .fnRef 上挂 [data-fn-open] 控制。
+ * -------------------------------------------------------------------------- */
+.fnRef[data-fn-open] > .fnPop {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(calc(-50% + var(--fn-pop-shift))) translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+ * 两个平台共用的"落位状态"（由 footnotePopoverFit.js 写入）
+ * --------------------------------------------------------------------------
+ * 下面两条都不限定 [data-fn-open]：它们描述的是"弹窗该往哪边弹、要不要内部滚动"，
+ * 与"是谁把它显示出来的"无关。触屏点开、桌面悬停/聚焦，得到的几何完全一样。
+ * -------------------------------------------------------------------------- */
+
+/* 编号上方放不下 → 翻到下方；小三角掉头朝上（上+左边框的方块转 45°） */
+.fnRef[data-fn-flip='below'] > .fnPop {
+  top: calc(100% + 0.45rem);
+  bottom: auto;
+}
+
+.fnRef[data-fn-flip='below'] > .fnPop::after {
+  top: -5px;
+  border-right: none;
+  border-bottom: none;
+  border-top: 1px solid var(--ifm-color-emphasis-300);
+  border-left: 1px solid var(--ifm-color-emphasis-300);
+}
+
+/* 注解长到两侧都装不下时，让弹窗自己滚，并且别把滚动传给页面（否则一滚就翻页）。
+   overflow 会把探出盒外的小三角裁掉，所以这时索性把它藏了。
+   ⚠️ 这里**故意不限定 [data-fn-open]**：那是触屏专属的"已点开"状态，而指针设备靠
+   :hover / :focus-within 显示弹窗、不会挂这个属性。data-fn-scroll 只在"内容确实高于
+   实测上限"时才由 JS 挂上，本身就意味着此刻弹窗正要显示，两个平台语义一致。 */
+.fnRef[data-fn-scroll] > .fnPop {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.fnRef[data-fn-scroll] > .fnPop::after {
+  display: none;
+}
+
+/* 触屏：把点击热区撑大一圈。
+   编号本身只有半个字大，手指很难命中。
+   ⚠️ 撑的是**编号链接自己**的外边距（`<a>` 是 inline，垂直 padding 不参与行盒高度，
+   所以行距一点都不会变；水平 padding 用等量负 margin 抵掉，文字位置也不动）。
+   别改成给外层 .fnRef 加一个绝对定位的伪元素来扩大热区：伪元素是"定位元素"，
+   画在行内内容**之上**，点击目标会从 `<a>` 变成外层 span —— 长按看链接、Tab 聚焦、
+   以及"点一下跳转"这些依赖 `<a>` 的行为都会跟着受影响。 */
+@media (hover: none), (pointer: coarse) {
+  .fnRef > sup > a[data-footnote-ref] {
+    padding: 0.5rem 0.35rem;
+    margin: 0 -0.35rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 指针设备：悬停 / 键盘聚焦时显示（可见性规则与从前完全一致）
+ * --------------------------------------------------------------------------
+ * "显示在哪儿"不在这里决定：由 src/clientModules/footnotePopoverHover.js 在悬停/聚焦时
+ * 调用与触屏**同一套** footnotePopoverFit.js（上方优先 → 放不下翻面 → 贴边平移 → 限高内部滚动），
+ * 把实测值写进 --fn-pop-shift / --fn-pop-max 与 data-fn-flip / data-fn-scroll。
+ *
+ * ❗ 这里曾经有一条 `@media (max-width: 996px)` 分支，把弹窗改成"从编号向左展开"来减少
+ *    贴近右边缘时溢出。它有两个问题，所以删掉了：
+ *      1. 它的 transform 不含 --fn-pop-shift，会**绕开**平移量 —— 窄窗口里贴边平移失效；
+ *      2. 它是一套只属于桌面的定位规则，跟触屏的定位行为不一致（同一个弹窗两套几何）。
+ *    现在"贴边"统一由平移量处理，窄窗口与触屏同构，溢出问题一样能解决。
+ * -------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .fnPop {
+    display: block;
+  }
+
+  /* 悬停（含鼠标移到弹窗自身上，因为它是 .fnRef 的子节点）或键盘聚焦时显示 */
+  .fnRef:hover > .fnPop,
+  .fnRef:focus-within > .fnPop {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(calc(-50% + var(--fn-pop-shift))) translateY(0);
+  }
+}
+
+/* ==========================================================================
+ * 脚注跳转的落点高亮（两个方向共用）
+ * --------------------------------------------------------------------------
+ * 滚动本身由 src/clientModules/footnoteScrollCenter.js 负责，两个方向都走同一条算法：
+ *   · 正文编号 → 文末条目：那条 <li> 滚到视口**垂直居中**；
+ *   · 文末 ↩  → 正文编号：正文里那个编号滚到视口**垂直居中**。
+ * 高亮只是补上"眼睛落点"——长段落里光有居中还不够，需要一秒钟的提示让它一眼被认出来。
+ * 因为两侧都加在"块"上（正文侧是那个编号，文末侧是整条 <li>），所以这个类
+ * 不绑定任何具体元素，谁被居中就加在谁身上。
+ *
+ * 刻意写在 hover 媒体查询**之外**：触屏设备上弹窗是关掉的，
+ * 但"点编号跳过去 / 点 ↩ 跳回来"这两条路必须同样可用，所以高亮不能跟着弹窗一起被关在指针设备里。
+ *
+ * 配色沿用两套主色（亮色 #320009 / 暗色 #ffd1b3），所以明暗主题自动适配。
+ * 不想要高亮？删掉本节即可——滚动居中不依赖它。
+ * ========================================================================== */
+
+:root {
+  --fn-flash-color: rgba(50, 0, 9, 0.16);
+}
+
+[data-theme='dark'] {
+  --fn-flash-color: rgba(255, 209, 179, 0.22);
+}
+
+.fnRefFlash {
+  border-radius: 0.25rem;
+  animation: fnRefFlash 1.6s ease-out;
+}
+
+/* 前 45% 保持亮度，之后淡出；与 JS 里 1.6s 后摘类的时间对齐 */
+@keyframes fnRefFlash {
+  0%,
+  45% {
+    background-color: var(--fn-flash-color);
+    box-shadow: 0 0 0 0.18em var(--fn-flash-color);
+  }
+
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0.18em transparent;
+  }
+}
+
+/* 减少动效偏好：不做淡出动画，改为短促地亮一下再由 JS 摘掉 */
+@media (prefers-reduced-motion: reduce) {
+  .fnRefFlash {
+    animation: none;
+    background-color: var(--fn-flash-color);
+    box-shadow: 0 0 0 0.18em var(--fn-flash-color);
+  }
+}
