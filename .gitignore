@@ -4,9 +4,13 @@
 # Production
 /build
 
+# Ai maked
+/review
+
 # Generated files
 .docusaurus
 .cache-loader
+.workbuddy
 
 # Misc
 .DS_Store
