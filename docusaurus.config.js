@@ -22,15 +22,16 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
+  url: 'https://WoskySot.github.io', // Your website URL
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/rossiadaa_docusaurus_3/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'WoskySot', // Usually your GitHub org/user name.
+  projectName: 'rossiadaa_docusaurus_3', // Usually your repo name.
+  deploymentBranch: 'gh-pages', // The branch the docs are deployed to.
 
   onBrokenLinks: 'throw',
 
@@ -184,8 +185,6 @@ const config = {
         hashed: true,
 
         // For Docs using Chinese, it is recomended to set:
-        // ⚠️ 本站正文是中文，**必须**打开这一项：默认只有 "en"，
-        //    索引里不会出现任何中文词条，中文关键词一条都搜不到（且构建不报错，是静默失效）。
         language: ["en", "zh"],
 
         // Customize the keyboard shortcut to focus search bar (default is "mod+k"):
