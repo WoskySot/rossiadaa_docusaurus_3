@@ -111,11 +111,11 @@ const config = {
             label: '📕已完成📕',
           },
           {to: '/blog', label: '🗨公告栏🗨', position: 'left'},
-          // {
-          //   href: 'https://github.com/facebook/docusaurus',
-          //   label: 'GitHub',
-          //   position: 'right',
-          // },
+          {
+            href: 'https://github.com/WoskySot',
+            label: 'GitHub',
+            position: 'right',
+          },
         ],
       },
       footer: {
