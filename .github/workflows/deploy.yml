@@ -36,7 +36,7 @@ jobs:
       # ⚠️ 必须与 EdgeOne 控制台里的「项目名称」完全一致。
       #    名字写错**不会报错**——CLI 会按这个新名字创建一个新项目，
       #    而你以为在更新的那个站点始终不变。
-      EDGEONE_PROJECT_NAME: rossiadaa
+      EDGEONE_PROJECT_NAME: rossiyadaa
       # Docusaurus 的构建输出目录（本项目用默认值 build/）
       OUTPUT_DIR: ./build
 
