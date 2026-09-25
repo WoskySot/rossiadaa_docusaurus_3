@@ -1,0 +1,94 @@
+# ===========================================================================
+#  EdgeOne Pages（Makers）自动部署
+#  参考：https://pages.edgeone.ai/zh/document/using-github-actions
+#
+#  放置位置必须是：<仓库根目录>/.github/workflows/deploy.yml
+#  （GitHub 只认这个路径：.github/workflows/ 目录下、扩展名为 .yml/.yaml）
+#
+#  一次性准备（在仓库页面上操作）：
+#    1) Settings → Secrets and variables → Actions → Secrets
+#       新增 Repository secret： Name = EDGEONE_API_TOKEN
+#                              Secret = EdgeOne API Token（控制台 → API Token 获取）
+#    2) 确认下面的 EDGEONE_PROJECT_NAME 与控制台里的「项目名称」一字不差
+# ===========================================================================
+
+name: Build and Deploy
+
+# ① 向 main 分支推送时自动构建并部署
+on:
+  push:
+    branches:
+      - main
+  # ② 支持手动触发：改完配置想立刻验证时，到 Actions 页面点 Run workflow，
+  #    不用先造一个空提交
+  workflow_dispatch:
+
+# 同一分支只保留最新一次部署：连续推送时，旧的那次会被取消，
+# 避免两个构建互相覆盖（旧产物最后落地是最容易踩的坑）
+concurrency:
+  group: edgeone-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      # ⚠️ 必须与 EdgeOne 控制台里的「项目名称」完全一致。
+      #    名字写错**不会报错**——CLI 会按这个新名字创建一个新项目，
+      #    而你以为在更新的那个站点始终不变。
+      EDGEONE_PROJECT_NAME: rossiadaa
+      # Docusaurus 的构建输出目录（本项目用默认值 build/）
+      OUTPUT_DIR: ./build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.11.0' # 官方文档示例版本；本项目 engines 要求 >=20
+          cache: yarn # 读取 yarn.lock 做依赖缓存
+
+      - name: Check required secret
+        run: |
+          if [ -z "${{ secrets.EDGEONE_API_TOKEN }}" ]; then
+            echo "::error title=缺少 Secret::没有读到 EDGEONE_API_TOKEN。请到 Settings → Secrets and variables → Actions → Secrets 添加后重跑。"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        # 这里用 yarn 而不用文档里的 npm install，原因见下：
+        # 本仓库同时存在 yarn.lock（新，含 @easyops-cn/docusaurus-search-local）
+        # 与 package-lock.json（旧，不含该依赖）。两者不同步时
+        # `npm ci` 会直接报错退出，`npm install` 会重写锁文件、每次装的版本可能不同。
+        # 想改用 npm 的话：先删掉 yarn.lock、跑一次 `npm install` 让 package-lock.json
+        # 与新依赖同步并提交，再把下面两行换成 `npm ci` / `npm run build`。
+        run: yarn install --frozen-lockfile
+
+      - name: Build project
+        run: yarn build
+
+      - name: Deploy to EdgeOne Makers
+        id: deploy
+        env:
+          EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          # --yes 是必需的：CI 里没有交互终端，npx 遇到未安装的包会卡在确认提示上
+          OUTPUT=$(npx --yes edgeone@latest makers deploy "$OUTPUT_DIR" \
+            -n "$EDGEONE_PROJECT_NAME" \
+            -t "$EDGEONE_API_TOKEN" 2>&1) || { echo "$OUTPUT"; exit 1; }
+          echo "$OUTPUT"
+
+          URL=$(printf '%s\n' "$OUTPUT" | grep -o 'https://[^[:space:]]*' | tail -n 1 || true)
+          if [ -n "$URL" ]; then
+            {
+              echo "### EdgeOne 部署完成 :rocket:"
+              echo ""
+              echo "| 项目 | 访问地址 |"
+              echo "| --- | --- |"
+              echo "| \`$EDGEONE_PROJECT_NAME\` | $URL |"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "EDGEONE_DEPLOY_URL=$URL" >> "$GITHUB_OUTPUT"
+          fi
