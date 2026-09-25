@@ -74,6 +74,39 @@
 }
 
 /* ==========================================================================
+ * 导航栏 Navbar
+ * --------------------------------------------------------------------------
+ * 桌面端 themeConfig.navbar.items 只渲染在导航栏里；但视口一旦窄于 996px
+ * （Docusaurus 的移动端断点），同一份 items 会被**再渲染一遍**进导航栏左侧的
+ * 滑出抽屉，DOM 是：
+ *   .navbar-sidebar > .navbar-sidebar__item.menu > ul.menu__list
+ *     > li.menu__list-item > a.menu__link
+ * 于是像「GitHub」这类外链会同时出现在右上角和左侧抽屉里 —— 后者看起来就像
+ * 一个"左侧侧边栏"。桌面宽屏下 .navbar-sidebar 根本不会渲染，所以这个问题
+ * 只在窄窗口（点开汉堡菜单）或手机上出现。
+ *
+ * NavbarItem 没有 hidden / disabled 这类开关
+ * （node_modules/@docusaurus/theme-common/lib/utils/useThemeConfig.d.ts 里
+ *  只有 type / items / label / position），所以"只在抽屉里隐藏、导航栏保留"
+ * 只能靠 CSS。
+ *
+ * 两条选择器上的讲究：
+ *   1. 隐藏的是 li 而不是 a。抽屉里每个导航项是一整行（实测 li 为 308×32），
+ *      只把 <a> 藏掉会留下一行空位。
+ *   2. 作用域限定在 .navbar-sidebar 内。文档侧边栏用的是同一套 .menu__list
+ *      类名，不加限定会连正文侧边栏一起误伤。
+ *
+ * 如果连右上角那个入口也不想要，就别用本节 —— 直接把 docusaurus.config.js 里
+ * navbar.items 中那一项注释掉即可（全站都不出现）。
+ * ========================================================================== */
+
+@media (max-width: 996px) {
+  .navbar-sidebar li:has(> a[href^='https://github.com/WoskySot']) {
+    display: none;
+  }
+}
+
+/* ==========================================================================
  * 弹出窗口式脚注（EPUB 风格）
  * --------------------------------------------------------------------------
  * 标记由构建期的 rehype 插件 plugins/footnote-popover/index.js 生成：
