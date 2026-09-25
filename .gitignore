@@ -12,6 +12,10 @@
 .env
 .env.*
 !.env.example
+# EdgeOne CLI 的凭据文件：`edgeone login --local` 会把 API Token 明文写进
+# <cwd>/.edgeone/auth.json，绝不能提交；CLI 也会主动读 ./.env 与 ./.env.local
+# 里的 TENCENT_SECRET_ID / TENCENT_SECRET_KEY / EDGEONE_PAGES_API_TOKEN。
+/.edgeone
 
 # ------------------------------- 日志 ------------------------------------
 *.log
