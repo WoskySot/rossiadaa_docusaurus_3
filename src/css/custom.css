@@ -497,11 +497,14 @@
   opacity: 1;
 }
 
-/* 词条页顶部的「未列出页」提醒横幅。
-   docs/dictionary/ 下的词条是**有意隐藏但需要可达**的页面（导航、侧边栏、/docs/ 总览、
-   sitemap 与搜索索引都不收录，见各词条 front matter 里的 unlisted: true），
-   读者从弹窗的「查看全文 →」进来时会看到一个橙色警告——那属于误报，所以隐藏。
-   站内没有别的页面使用 unlisted，因此这条是全局生效的，符合本站"隐藏即有意"的约定。 */
+/* 词条页顶部的「未列出页」提醒横幅（.theme-unlisted-banner）。
+   docs/dictionary/ 的词条**刻意**带 `unlisted: true`（⇒ 不进 sitemap、不被外部搜索引擎收录），
+   但那是"有意隐藏"而不是"内容有问题"，所以读者从弹窗的「查看全文 →」进来时不该看到这条橙色警告。
+   站内没有别的页面使用 unlisted，所以这条是全局生效的，符合本站"隐藏即有意"的约定。
+
+   ⚠️ 它与 docusaurus.config.js 里的 `forceIgnoreNoIndex: true` 是**一套**的：
+   unlisted 会让搜索插件整页跳过，那个全局开关负责把词条捞回站内搜索。
+   哪天要放弃 unlisted（改回普通文档），这三处（两个词条 + 全局开关 + 本规则）要一起撤。 */
 .theme-unlisted-banner {
   display: none;
 }

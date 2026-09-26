@@ -1,7 +1,24 @@
 ---
+# `unlisted: true` 是**刻意**的（「能搜到但不被 Google 收录」方案）：
+#   · 它让本词条渲染 <meta name="robots" content="noindex, nofollow">、不进 sitemap
+#     ⇒ 外部搜索引擎不收录；
+#   · 但它同时会让搜索插件**整页跳过**，所以站内搜索靠 docusaurus.config.js 里的
+#     全局开关 `forceIgnoreNoIndex: true` 捞回来。
+#   ⚠️ 这两处必须**同时存在**，只留一个就会坏：
+#       只留 unlisted     → 词条搜不到（且构建日志毫无异常，最难查）
+#       只留 forceIgnore  → 词条不再 noindex，会被 Google 收录
+#   页顶的「未列出页」橙色横幅是 unlisted 的副作用，属误报，由 src/css/custom.css 的
+#   `.theme-unlisted-banner{display:none}` 隐藏。
+#   开关全表见 review/ 下的《Dictionary 搜索开关说明.md》——注意 review/ 未纳入 git。
 unlisted: true
 title: 帝俄
 description: 俄罗斯帝国（1721–1917）的通称。
+# keywords 会被搜索插件单独做成一条高权重索引，专门用来放**别名/同义词**
+keywords:
+  - 沙俄
+  - 俄国
+  - 俄罗斯帝国
+  - Russian Empire
 sidebar_position: 1
 ---
 

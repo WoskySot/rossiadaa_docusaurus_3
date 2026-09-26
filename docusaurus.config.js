@@ -197,8 +197,16 @@ const config = {
         // searchBarShortcutKeymap: "s", // Use 'S' key
         // searchBarShortcutKeymap: "ctrl+shift+f", // Use Ctrl+Shift+F
 
-        // If you're using `noIndex: true`, set `forceIgnoreNoIndex` to enable local index:
-        // forceIgnoreNoIndex: true,
+        // ✅ 已启用 —— 对应「能搜到但不被 Google 收录」方案。
+        //    插件默认遇到 <meta name="robots" content="noindex..."> 会**整页跳过**，而 Docusaurus 的
+        //    front matter `unlisted: true` 正好会渲染出这条 meta。docs/dictionary/ 的词条是**刻意**
+        //    保留 unlisted 的（⇒ 不进 sitemap、外部搜索引擎不收录），所以必须在这里打开这个开关，
+        //    否则词条会「构建得出来、URL 能访问，却搜任何词都命中不了，且构建日志毫无异常」。
+        //    ⇒ 词条的 `unlisted: true` 与这里的 `true` **必须同时存在**，只留一个就会坏。
+        //    ⚠️ 这是**全局**开关：以后任何标了 unlisted / noIndex 的页面都会一起被索引进站内搜索
+        //    ⇒ 不能再靠 unlisted 来"排除站内搜索"了（要排除站内搜索请改用 ignoreFiles）。
+        //    开关全表与场景示例见 review/dictionary-搜索开关说明.md（场景 B）
+        forceIgnoreNoIndex: true,
 
       }),
     ],
