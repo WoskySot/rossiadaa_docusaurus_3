@@ -458,3 +458,50 @@
     box-shadow: 0 0 0 0.18em var(--fn-flash-color);
   }
 }
+
+/* ==========================================================================
+ * Dictionary 弹窗（词条弹窗）
+ * --------------------------------------------------------------------------
+ * 结构与脚注弹窗**完全同构**：同样是 .fnRef 容器 + .fnPop 面板，弹窗内部的块级
+ * 副本同样是 .fnPopBlock + .fnPopXxx 类名（见 plugins/lib/popover-shared.js）。
+ * 所以外观、几何、显隐、定位算法全部直接复用上一节 —— 这里只补它没有的三样。
+ *
+ * 内容来自**另一篇文档**（docs/dictionary/词条 里「## 概括」一节），构建期由
+ * plugins/dict-popover/index.js 复制过来；正文里只要是一个指向词条的普通链接就会挂上。
+ * ========================================================================== */
+
+/* 打印时把弹窗藏掉。
+   ⚠️ 实测教训：原以为"打印媒体不匹配 hover/pointer 查询，所以基础层的 display:none 会自然生效"，
+   **这个假设不成立** —— 在 Chrome 的 print 媒体模拟下 `(hover: hover) and (pointer: fine)`
+   仍然匹配，于是正被悬停/聚焦（或触屏已点开）的那个弹窗会照原样印出来。
+   所以这里显式写一条。脚注弹窗共用同一个类名，也一并受益。 */
+@media print {
+  .fnPop {
+    display: none;
+  }
+}
+
+/* 弹窗底部的「查看全文 →」出口。
+   触屏上词条弹窗沿用脚注的两段式点击（第一下弹窗、第二下才跳转），
+   没有这个明确的去路，读者会以为链接"点不动"。 */
+.fnPopMore {
+  display: block;
+  margin-top: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.fnPopMore:hover {
+  opacity: 1;
+}
+
+/* 词条页顶部的「未列出页」提醒横幅。
+   docs/dictionary/ 下的词条是**有意隐藏但需要可达**的页面（导航、侧边栏、/docs/ 总览、
+   sitemap 与搜索索引都不收录，见各词条 front matter 里的 unlisted: true），
+   读者从弹窗的「查看全文 →」进来时会看到一个橙色警告——那属于误报，所以隐藏。
+   站内没有别的页面使用 unlisted，因此这条是全局生效的，符合本站"隐藏即有意"的约定。 */
+.theme-unlisted-banner {
+  display: none;
+}

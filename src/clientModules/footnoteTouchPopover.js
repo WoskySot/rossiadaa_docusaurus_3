@@ -8,6 +8,11 @@
  *   再点这个编号     → 关掉弹窗并放行，由 footnoteScrollCenter.js 接手：
  *                      文末条目滚到视口**垂直居中** + 1.6s 落点高亮
  *
+ * 本模块同时服务**词条弹窗**（Dictionary）：那也是 .fnRef 容器 + .fnPop 面板，
+ * 只是引用换成了正文里的普通链接（带 data-dict-ref）。于是触屏上词条链接同样
+ * 第一下弹窗、第二下才跳转；插件会在弹窗底部放一个「查看全文 →」出口，
+ * 免得读者以为链接"点不动"。
+ *
  * 其余细节：
  *   · 点正文其他任何地方、或点弹窗自身的空白 → 收起弹窗；
  *   · 点**另一个**编号 → 换成它的弹窗（不跳转）——同一时刻只留一个弹窗，符合直觉；
@@ -35,6 +40,7 @@
 
 import {
   BOX_SELECTOR,
+  DICT_ATTR,
   OPEN_ATTR,
   POP_SELECTOR,
   REF_ATTR,
@@ -104,7 +110,9 @@ function onClick(event) {
   }
 
   const box = node.closest(BOX_SELECTOR);
-  if (!box || !box.querySelector(`a[${REF_ATTR}]`)) {
+  // 两种弹窗引用都算：脚注编号（data-footnote-ref）与词条链接（data-dict-ref）。
+  // 少了后者，触屏上点词条链接会被当成"点了正文别处"——弹窗直接收起、且第一下就跳走。
+  if (!box || !box.querySelector(`a[${REF_ATTR}], a[${DICT_ATTR}]`)) {
     closeFootnotePopover(); // 点了正文别处：收起
     return;
   }

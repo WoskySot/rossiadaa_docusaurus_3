@@ -7,6 +7,7 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import footnotePopover from './plugins/footnote-popover/index.js';
 import bianmaMark from './plugins/bianma-mark/index.js';
+import dictPopover from './plugins/dict-popover/index.js';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -59,7 +60,11 @@ const config = {
           //
           // 边码锚点语法 ^^文本^^：构建期转成正文里的零宽锚点，
           // 落点由 src/components/Bianma 在浏览器里实测后画进版心外白边。
-          rehypePlugins: [footnotePopover, bianmaMark],
+          //
+          // Dictionary 词条弹窗：正文里链接到 docs/dictionary/<词条> 就自动挂弹窗，
+          // 弹窗内容是词条里「## 概括」一节（作者手写）。与脚注共用同一套弹窗机制
+          // （同样的 .fnRef / .fnPop 类名契约），详见 plugins/dict-popover/index.js。
+          rehypePlugins: [footnotePopover, bianmaMark, dictPopover],
         },
         blog: {
           showReadingTime: true,
@@ -75,6 +80,8 @@ const config = {
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
+          // 公告栏里也要有词条弹窗 —— 必须**单独挂一次**，docs 那份不会自动生效。
+          rehypePlugins: [dictPopover],
         },
         theme: {
           customCss: './src/css/custom.css',

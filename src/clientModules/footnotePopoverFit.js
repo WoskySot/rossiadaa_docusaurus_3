@@ -31,6 +31,9 @@ import {navbarInset} from './footnoteScrollCenter';
 
 /** 与插件/主题一致的标记属性与选择器 */
 export const REF_ATTR = 'data-footnote-ref';
+/** 词条弹窗（Dictionary）的引用标记：由 plugins/dict-popover 写在被包的 <a> 上。
+ *  两类引用共用 .fnRef / .fnPop 这套容器与面板，所以定位算法完全不用改。 */
+export const DICT_ATTR = 'data-dict-ref';
 export const BOX_SELECTOR = '.fnRef';
 export const POP_SELECTOR = '.fnPop';
 
