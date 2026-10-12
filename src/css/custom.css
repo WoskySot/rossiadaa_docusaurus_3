@@ -30,14 +30,20 @@
 }
 
 /* ==========================================================================
- * 超链接 Link —— 让正文里的链接与正文文字分得开
+ * 超链接 Link —— 只给「正文里的链接」换色
  * --------------------------------------------------------------------------
  * 问题：Infima 的 `--ifm-link-color` 默认 `var(--ifm-color-primary)`，而本站亮色主色是
  *   **极深的酒红 #320009**。它与正文文字（#1c1e21）的对比只有 **1.10:1** —— 于是正文里的
  *   链接看上去就是普通黑字，完全不像链接（这正是"白底黑字分不清"的根因）。
  *
- * 做法：只改**亮色**的链接色，**不动主色** —— 主色还同时承担 hero 背景、页脚背景与
- *   侧边栏高亮，改它会连带影响一大片。
+ * 但"链接看不清"这个毛病**只发生在正文里**：那里链接与正文文字并排，靠颜色区分；
+ *   而分页键、公告栏列表标题、导航栏当前项这些位置的链接是**独立出现**的 ——
+ *   深酒红对白底有 18.43:1，单独看一点都不糊，反倒是被一起改掉后丢了品牌感。
+ *
+ * 所以本站的做法是：**不动 Infima 的全局默认**，另设一条正文专属参数，只在
+ *   正文容器 `.markdown` 这一层把 Infima 的 token 接过去（见本节的 ②）。
+ *   于是"改正文链接"与"改其它地方链接"彻底解耦 —— 以后想调正文链接色，
+ *   只改 ① 里的一个值即可，不会再波及分页、列表标题、导航。
  *
  * 取值 `#c0392b`（砖红／石榴红）的两个硬指标（WCAG）：
  *   · 对白底        **5.44:1**  → 达 AA（正文类文字要求 ≥4.5:1）
@@ -50,26 +56,41 @@
  *   `--ifm-link-hover-color` = `--ifm-link-color`，等于悬停时颜色不变、只有下划线；
  *   这里补一个同色相的加深反馈。
  *
- * ⚠️ **dark 主题必须显式复位**：`--ifm-link-color` 写在 `:root` 上，而暗色块只改了
- *   `--ifm-color-primary`。若不在这里把链接色写回去，暗色主题会继承到这个砖红
+ * ⚠️ **dark 主题必须显式复位**：`--body-link-color` 写在 `:root` 上，而暗色块只改了
+ *   `--ifm-color-primary`。若不在暗色块里把它写回去，暗色主题会继承到这个砖红
  *   （对深色底仅 3.16:1）—— 现有暗色观感就被破坏了。
  *
- * 影响面（实测清点，均为"真·超链接"，符合预期）：正文 `.markdown a`、
- *   `/docs/` 总览的文档标题（`DocsOverview` 用的是同一 token）、`docs/` 文章底部的
- *   上一页/下一页标签；**不受影响**：导航栏、侧边栏 `.menu__link`、文内目录 `.table-of-contents__link`、
- *   面包屑、页脚（各有独立 token），以及提示框 `.alert` 内的链接（Infima 在 `.alert` 作用域里
- *   把它重定义为 `--ifm-alert-foreground-color`，正好避开彩色底）。
+ * 影响面（实测清点）：正文 `.markdown a`（文档页/博客正文/博客列表摘要）、
+ *   `/docs/` 总览的文档标题（`DocsOverview` 用的是 `--ifm-link-color`，且在 `.markdown` 里）、
+ *   正文标题悬停时显形的 `#` 锚点链接；**完全不受影响**：分页「上一页/下一页」、
+ *   公告栏列表标题与作者/标签/「阅读更多」链接、导航栏（其中当前项由 Docusaurus 的
+ *   `.navbar__link--active` 指定为 `--ifm-navbar-link-hover-color` = 主色，本来就不吃
+ *   Infima 那个 `--ifm-link-color` 派生值）、侧边栏 `.menu__link`、文内目录、面包屑、页脚
+ *   （各有独立 token 或落在 `.markdown` 之外），以及提示框 `.alert` 内的链接
+ *   （Infima 在 `.alert` 作用域里把 token 重定义为 `--ifm-alert-foreground-color`，
+ *   仍是"更近的祖先"胜出）。详细清点与实测数据见 `review/link-color/`。
  * ========================================================================== */
 
+/* ① 正文链接专属配色（站点自定义参数，与 Infima 全局默认无关） */
 :root {
-  --ifm-link-color: #c0392b;
-  --ifm-link-hover-color: #320009;
+  --body-link-color: #c0392b;
+  --body-link-hover-color: #320009;
 }
 
-/* 复位成原来由 --ifm-color-primary（暗色 #ffd1b3）派生的值 ⇒ 暗色观感一字不变 */
+/* 暗色：正文链接沿用它原本由主色派生的颜色（#ffd1b3） ⇒ 暗色观感一字不变 */
 [data-theme='dark'] {
-  --ifm-link-color: var(--ifm-color-primary);
-  --ifm-link-hover-color: var(--ifm-link-color);
+  --body-link-color: var(--ifm-color-primary);
+  --body-link-hover-color: var(--ifm-color-primary);
+}
+
+/* ② 把这条参数只接到「正文容器」上。
+   Docusaurus 的正文统一带 `.markdown` 类：文档页 `.theme-doc-markdown.markdown`、
+   博客正文 `#__blog-post-container.markdown`、博客列表摘要 `.markdown`。
+   在这一层改写 Infima 的 token，作用域天然被限制在正文内部（自定义属性随 DOM 继承，
+   不靠选择器优先级，所以 `.alert` 那种更近的祖先依然能覆盖它）。 */
+.markdown {
+  --ifm-link-color: var(--body-link-color);
+  --ifm-link-hover-color: var(--body-link-hover-color);
 }
 
 /* ==========================================================================
