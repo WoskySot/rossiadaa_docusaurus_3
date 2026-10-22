@@ -23,7 +23,9 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://console.cloud.tencent.com/', // Your website URL
+  // 线上域名（EdgeOne Pages）。这个值决定产物里的 canonical、og:url、sitemap.xml 与 RSS 的绝对链接，
+  // 之前一直是脚手架的占位值 https://console.cloud.tencent.com/ —— 会让搜索引擎与分享卡片指向别人的域名。
+  url: 'https://rossiyadaa.bot.cd', // No trailing slash: Docusaurus 会自己拼路径
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
