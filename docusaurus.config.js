@@ -109,13 +109,19 @@ const config = {
             type: 'docSidebar',
             sidebarId: 'inProgressSidebar',
             position: 'left',
-            label: '🛠施工中🛠',
+            label: '施工中',
           },
           {
             type: 'docSidebar',
             sidebarId: 'completedSidebar',
             position: 'left',
-            label: '📕已完成📕',
+            label: '已完工',
+          },
+          {
+            type: 'docSidebar',
+            sidebarId: 'chatSidebar',
+            position: 'left',
+            label: '杂谈',
           },
           {to: '/blog', label: '🗨公告栏🗨', position: 'left'},
           {
@@ -191,7 +197,7 @@ const config = {
         hashed: true,
 
         // For Docs using Chinese, it is recomended to set:
-        language: ["en", "zh"],
+        language: ["en", "zh","ru"],
 
         // Customize the keyboard shortcut to focus search bar (default is "mod+k"):
         // searchBarShortcutKeymap: "s", // Use 'S' key

@@ -22,3 +22,8 @@ important:
   label: 重要声明
   permalink: /important
   description: Important tag description
+
+Chat:
+  label: 杂谈
+  permalink: /chat
+  description: Chat tag description
