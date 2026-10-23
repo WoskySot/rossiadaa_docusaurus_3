@@ -94,6 +94,118 @@
 }
 
 /* ==========================================================================
+ * 正文排版 Typography —— 长文阅读：首行缩进 + 紧凑段距（方案①）
+ * --------------------------------------------------------------------------
+ * 原始状态：字号 16px、行高 26.4px（1.65）、段间距 20px、不缩进。
+ *   中文是**方块字、字面占满字身**，同样行高下比西文更挤；1.65 对长段落偏低。
+ *
+ * 取值（方案①：“首行缩进 2 字 + 段间几乎不留空”，纸质书排法）：
+ *   · 行高 **1.75**（16px → 28px 行盒）。中文长文常用区间 1.7–1.8，取中段；
+ *     ⚠️ 不按视口分档——窄屏读起来本就更累，统一同一个值最稳。
+ *   · 首行缩进 **2em**（= 32px = 两个汉字）。`em` 相对字号，全角字 advance 正好 1em，
+ *     所以 16px/18px/20px 下都自动等于两个汉字；**不要用 `ch`**（那是“0”的宽度，约 0.5em）。
+ *   · 段间距 **0.5rem（8px）**。缩进已经承担“段落分界”，段间再留大空会变成双重分隔（那是我给
+ *     你对比的另一套 ③）；8px 只是让两段不至于完全粘连。
+ *   · 标题行高 **1.3**（原 1.25）：标题在窄屏常折两行，1.25 会贴在一起。
+ *   · 标题下间距 **0.65 × 标题节奏**（约 15px），上间距仍是 2×（h2）/1.5×（h3）⇒ 上大下小，
+ *     标题明确“属于”它下面那段文字，层级靠留白而不是靠缩进。
+ *
+ * ⚠️ **段间距与标题节奏必须拆成两个变量**（方案① 的关键）：
+ *   上一版把两者都挂在 `--ifm-leading` 上。若直接把它降到 8px，h2 的上间距会从 46.4px 塌到 16px、
+ *   下间距塌到 5px，标题会死死贴住正文。所以这里改成：
+ *     `--ifm-leading`        = 标题节奏（1.45rem，未动）
+ *     `--ifm-paragraph-margin-bottom` / `.markdown > p` = 段落间距（8px，新）
+ *   块间距靠外边距折叠（collapsing）自然分工：段落→段落 8px；代码块/列表后→段落 23.2px。
+ *
+ * ⚠️ 三处必须显式写、不能只改 :root：
+ *   1. `line-height` 必须写在 `.markdown` 上。`:root` 的 `--ifm-line-height-base` 是在
+ *      `body { font: … / var(--ifm-line-height-base) }` 里**当场解析**掉的，之后再改变量无效。
+ *   2. `--ifm-paragraph-margin-bottom` 也必须重写：它在 `:root` 里是 `var(--ifm-leading)`，
+ *      同样在 :root 就解析成了 1.25rem，不会跟着新值走。
+ *   3. `.markdown > p` 的下间距还要单独覆盖——Infima 有一条
+ *      `.markdown > pre, .markdown > ul, .markdown > p { margin-bottom: var(--ifm-leading) }`，
+ *      优先级 (0,1,1) 高于 `p`，只改 token 的话顶层段落仍是 23.2px、嵌套段落才是 8px。
+ *
+ * ⚠️ **`text-indent` 是继承属性，且作用于任何块容器（含 inline-block）**：
+ *   脚注 / 词典弹窗的容器 `.fnRef` 就是 `inline-block`，会继承段落的缩进，把上标编号右推 32px、
+ *   容器宽度从 7.83px 涨到 39.83px，还会连带把弹窗的 `left: 50%` 锚点挪位。所以必须复位——
+ *   见本节末尾的 `.fnRef, .fnPop`。这两行**不是可选的**。
+ *
+ * 与边码（`src/components/Bianma/`）的适配：
+ *   页码落点是**运行时实测**的（`Range.getClientRects()` 取字符矩形），行高/段距/缩进变了它都会
+ *   重新量，不需要改任何参数；`^^42^^` 锚点是行内元素且带 `font-size: 0`，`text-indent` 对行内
+ *   元素不生效，也不占位。实测 8 个页码全部落在文字行内（见 review/typography/方案①_落地说明.md）。
+ *   ⚠️ 要守住的边界：不要给 `.markdown` 设 `font-size`（边码白边 56px 是按 16px 的 2–3 位数字定的），
+ *   行高不要超过 2.0。
+ * ========================================================================== */
+
+:root {
+  --body-line-height: 1.75;
+  /* 段落间距：缩进负责分界，这里只留一点呼吸 */
+  --body-paragraph-gap: 0.5rem;
+  /* 标题节奏：只驱动标题上下留白，与段间距解耦 */
+  --body-heading-rhythm: 1.45rem;
+  --body-heading-line-height: 1.3;
+  /* 首行缩进：2em = 两个汉字；想临时关掉就改成 0 */
+  --body-text-indent: 2em;
+}
+
+.markdown {
+  line-height: var(--body-line-height);
+  --ifm-leading: var(--body-heading-rhythm);
+  --ifm-paragraph-margin-bottom: var(--body-paragraph-gap);
+  --ifm-heading-line-height: var(--body-heading-line-height);
+}
+
+/* ① 首行缩进：只给“连续正文段落”。
+   用 `> p`（直接子元素）而不是 `.markdown p`，天然避开卡片网格、提示框、列表、表格里的段落。 */
+.markdown > p,
+.markdown blockquote > p {
+  text-indent: var(--body-text-indent);
+}
+
+/* 独占一段的图片不缩进：否则图片会被整体右推 32px。
+   `:has()` 需要 Chrome 105+ / Safari 15.4+ / Firefox 121+；老浏览器忽略这条（只是图片偏右 32px，
+   本站只有脚手架示例页有这种段落）。 */
+.markdown > p:has(> img:only-child) {
+  text-indent: 0;
+}
+
+/* ② 段落间距。`p` 的默认下间距已由 token 承担；顶层段落还要压过 Infima 的
+   `.markdown > p { margin-bottom: var(--ifm-leading) }`，所以单独覆盖一次。
+   （列表 / 代码块保持 23.2px：它们是“另一种块”，与段落之间靠外边距折叠取大值。） */
+.markdown > p {
+  margin-bottom: var(--body-paragraph-gap);
+}
+
+/* ③ 复位：`text-indent` 会让 inline-block 把首行也缩进。
+   脚注与 dictionary 词条共用 `.fnRef` + `.fnPop` 这套契约，漏一处两套弹窗一起坏。 */
+.markdown .fnRef,
+.markdown .fnPop {
+  text-indent: 0;
+}
+
+/* 标题：上留白大、下留白小 ⇒ 标题吸附住它下面那段，而不是浮在两段中间 */
+.markdown > h2,
+.markdown > h3,
+.markdown > h4,
+.markdown > h5,
+.markdown > h6 {
+  margin-bottom: calc(0.65 * var(--ifm-leading));
+}
+
+/* 表格与列表不跟正文同行高：
+   表格 1.6 更紧凑（单元格短句多，1.75 会让表显得松散）；
+   列表项之间补一点间距，长清单才分得清条目。 */
+.markdown table {
+  line-height: 1.6;
+}
+
+.markdown li + li {
+  margin-top: 0.25em;
+}
+
+/* ==========================================================================
  * 页脚 Footer
  * --------------------------------------------------------------------------
  * 做法参考 Docusaurus 官方文档 “Styling and Layout”：
